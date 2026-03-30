@@ -39,9 +39,16 @@ export async function POST(req: Request) {
 
     // Get the latest user message and strip newlines
     const latestMessage = (history[history.length - 1]?.content || '').replace(/\n/g, ' ')
-    console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage })
+    
+    // Format conversation history as text (excluding the latest message)
+    const historyText = history
+      .slice(0, -1)
+      .map((msg) => `${msg.role}: ${msg.content}`)
+      .join('\n')
+    
+    console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage, History: historyText })
 
-    // Call the Power Automate API with Prompt payload
+    // Call the Power Automate API with Prompt and History payload
     const response = await fetch(POWER_AUTOMATE_API, {
       method: 'POST',
       headers: {
@@ -49,6 +56,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         Prompt: latestMessage,
+        History: historyText,
       }),
     })
 

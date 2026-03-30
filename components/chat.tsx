@@ -69,12 +69,15 @@ export function Chat() {
         body: JSON.stringify({ messages: apiMessages }),
       })
 
+      console.log('[v0] Chat API response status:', response.status)
+
       const data = await response.json().catch(() => ({}))
+      console.log('[v0] Chat API response data:', data)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || data.error || 'Sorry, I was unable to get a response. Please try again.',
+        content: data.response || 'Sorry, I was unable to get a response. Please try again.',
       }
 
       setMessages((prev) => [...prev, assistantMessage])
