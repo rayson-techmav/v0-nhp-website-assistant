@@ -59,6 +59,8 @@ export function Chat() {
         parts: [{ type: 'text', text: msg.content }],
       }))
 
+      console.log('[v0] Sending to chat API:', apiMessages)
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -67,16 +69,21 @@ export function Chat() {
         body: JSON.stringify({ messages: apiMessages }),
       })
 
+      console.log('[v0] Chat API response status:', response.status)
+
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('[v0] Chat API error:', response.status, errorData)
+        throw new Error(`API error: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('[v0] Chat API response data:', data)
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response,
+        content: data.response || 'No response received',
       }
 
       setMessages((prev) => [...prev, assistantMessage])

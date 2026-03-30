@@ -29,6 +29,7 @@ function extractTextFromParts(
 export async function POST(req: Request) {
   try {
     const { messages }: ChatRequest = await req.json()
+    console.log('[v0] Received request with', messages.length, 'messages')
 
     // Convert UI messages to simple format for the Power Automate API
     const history: Message[] = messages.map((msg) => ({
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
 
     // Get the latest user message
     const latestMessage = history[history.length - 1]?.content || ''
+    console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage })
 
     // Call the Power Automate API with Prompt payload
     const response = await fetch(POWER_AUTOMATE_API, {
@@ -50,30 +52,39 @@ export async function POST(req: Request) {
       }),
     })
 
+    console.log('[v0] Power Automate response status:', response.status)
+
     if (!response.ok) {
       const errorText = await response.text()
-      return new Response(
-        JSON.stringify({ error: 'Failed to get response from AI agent', details: errorText }),
-        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      console.error('[v0] Power Automate error:', response.status, errorText)
+      return Response.json(
+        { error: 'Failed to get response from AI agent', details: errorText },
+        { status: 500 }
       )
     }
 
     // Safely parse — the API may return plain text or JSON
     const rawText = await response.text()
+    console.log('[v0] Raw response:', rawText)
     let assistantResponse = rawText
 
     try {
       const data = JSON.parse(rawText)
       assistantResponse = data.Response ?? rawText
+      console.log('[v0] Extracted Response field:', assistantResponse)
     } catch {
+      console.log('[v0] Response was plain text, using as-is')
       // Response was plain text, use as-is
     }
 
+    console.log('[v0] Returning:', { response: assistantResponse })
     return Response.json({ response: assistantResponse })
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', details: String(error) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    console.error('[v0] API route caught error:', errorMessage)
+    return Response.json(
+      { error: 'Internal server error', details: errorMessage },
+      { status: 500 }
     )
   }
 }
