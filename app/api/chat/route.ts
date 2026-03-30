@@ -27,42 +27,56 @@ function extractTextFromParts(
 }
 
 export async function POST(req: Request) {
-  const { messages }: ChatRequest = await req.json()
+  try {
+    const { messages }: ChatRequest = await req.json()
+    console.log('[v0] Received messages:', messages.length)
 
-  // Convert UI messages to simple format for the Power Automate API
-  const history: Message[] = messages.map((msg) => ({
-    role: msg.role === 'user' ? 'user' : 'assistant',
-    content: extractTextFromParts(msg.parts),
-  }))
+    // Convert UI messages to simple format for the Power Automate API
+    const history: Message[] = messages.map((msg) => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: extractTextFromParts(msg.parts),
+    }))
 
-  // Get the latest user message
-  const latestMessage = history[history.length - 1]?.content || ''
+    // Get the latest user message
+    const latestMessage = history[history.length - 1]?.content || ''
+    console.log('[v0] Latest message:', latestMessage)
 
-  // Call the Power Automate API with Prompt payload
-  const response = await fetch(POWER_AUTOMATE_API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      Prompt: latestMessage,
-    }),
-  })
+    // Call the Power Automate API with Prompt payload
+    const response = await fetch(POWER_AUTOMATE_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Prompt: latestMessage,
+      }),
+    })
 
-  if (!response.ok) {
-    const errorText = await response.text()
-    console.error('[v0] Power Automate API error:', response.status, response.statusText, errorText)
+    console.log('[v0] Power Automate response status:', response.status)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[v0] Power Automate API error:', response.status, response.statusText, errorText)
+      return new Response(
+        JSON.stringify({ error: 'Failed to get response from AI agent', details: errorText }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const data = await response.json()
+    console.log('[v0] Power Automate response data:', data)
+    
+    // Extract the Response field from the Power Automate API
+    const assistantResponse = data.Response || ''
+    console.log('[v0] Extracted response:', assistantResponse)
+
+    // Return as a simple JSON response that the client will handle
+    return Response.json({ response: assistantResponse })
+  } catch (error) {
+    console.error('[v0] API route error:', error)
     return new Response(
-      JSON.stringify({ error: 'Failed to get response from AI agent', details: errorText }),
+      JSON.stringify({ error: 'Internal server error', details: String(error) }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
-
-  const data = await response.json()
-  
-  // Extract the response text - adjust based on your API response structure
-  const assistantResponse = typeof data === 'string' ? data : (data.response || data.text || data.message || JSON.stringify(data))
-
-  // Return as a simple JSON response that the client will handle
-  return Response.json({ response: assistantResponse })
 }
