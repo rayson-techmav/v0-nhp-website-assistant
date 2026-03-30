@@ -1,40 +1,68 @@
-import {
-  consumeStream,
-  convertToModelMessages,
-  streamText,
-  UIMessage,
-} from 'ai'
+export const maxDuration = 60
 
-export const maxDuration = 30
+interface Message {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+interface ChatRequest {
+  messages: Array<{
+    id: string
+    role: string
+    parts: Array<{ type: string; text?: string }>
+  }>
+}
+
+const POWER_AUTOMATE_API =
+  'https://605e3ed6b18fece1ad544f71a003a6.cb.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0db87d31dec84b7daa140ccfbbb8f968/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=93ExXpFQwQWAmgCnn1uyKKwZPWeb5NwHzDMfm2PNzH4'
+
+function extractTextFromParts(
+  parts: Array<{ type: string; text?: string }>
+): string {
+  if (!parts || !Array.isArray(parts)) return ''
+  return parts
+    .filter((p) => p.type === 'text' && typeof p.text === 'string')
+    .map((p) => p.text)
+    .join('')
+}
 
 export async function POST(req: Request) {
-  const { messages }: { messages: UIMessage[] } = await req.json()
+  const { messages }: ChatRequest = await req.json()
 
-  const result = streamText({
-    model: 'openai/gpt-5',
-    system: `You are the NHP Assistant, a helpful AI assistant for NHP Australia - specialists in electrical and automation products, systems, and solutions. 
+  // Convert UI messages to simple format for the Power Automate API
+  const history: Message[] = messages.map((msg) => ({
+    role: msg.role === 'user' ? 'user' : 'assistant',
+    content: extractTextFromParts(msg.parts),
+  }))
 
-NHP provides:
-- Electrical switchgear and protection devices
-- Industrial automation and control systems
-- Motor control centers and drives
-- Energy management solutions
-- Emergency and exit lighting (Stanilite)
-- Panelboards and distribution equipment
+  // Get the latest user message
+  const latestMessage = history[history.length - 1]?.content || ''
 
-Key facts about NHP:
-- Australian and New Zealand based company
-- Partners with global brands like Allen-Bradley, Rockwell Automation, Socomec
-- Known for "The Power of Local", "The Power of Choice", and "The Power of Global Partners"
-- Offers both products and complete solutions
-
-Be professional, knowledgeable, and helpful. Provide accurate information about electrical and automation products when asked. If you don't know something specific about NHP's products, recommend the user contact NHP directly for detailed specifications.`,
-    messages: await convertToModelMessages(messages),
-    abortSignal: req.signal,
+  // Call the Power Automate API
+  const response = await fetch(POWER_AUTOMATE_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      text: latestMessage,
+      history: history,
+    }),
   })
 
-  return result.toUIMessageStreamResponse({
-    originalMessages: messages,
-    consumeSseStream: consumeStream,
-  })
+  if (!response.ok) {
+    console.error('[v0] Power Automate API error:', response.status, response.statusText)
+    return new Response(
+      JSON.stringify({ error: 'Failed to get response from AI agent' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const data = await response.json()
+  
+  // Extract the response text - adjust based on your API response structure
+  const assistantResponse = typeof data === 'string' ? data : (data.response || data.text || data.message || JSON.stringify(data))
+
+  // Return as a simple JSON response that the client will handle
+  return Response.json({ response: assistantResponse })
 }

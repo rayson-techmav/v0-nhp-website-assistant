@@ -1,35 +1,22 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useChat } from '@ai-sdk/react'
-import { DefaultChatTransport } from 'ai'
 import { Send, Bot, User, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
-function getUIMessageText(
-  parts: Array<{ type: string; text?: string }>
-): string {
-  if (!parts || !Array.isArray(parts)) return ''
-  return parts
-    .filter(
-      (p): p is { type: 'text'; text: string } =>
-        p.type === 'text' && typeof p.text === 'string'
-    )
-    .map((p) => p.text)
-    .join('')
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
 }
 
 export function Chat() {
   const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/chat' }),
-  })
-
-  const isLoading = status === 'streaming' || status === 'submitted'
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -39,11 +26,61 @@ export function Chat() {
     scrollToBottom()
   }, [messages])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || isLoading) return
-    sendMessage({ text: input })
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input.trim(),
+    }
+
+    const newMessages = [...messages, userMessage]
+    setMessages(newMessages)
     setInput('')
+    setIsLoading(true)
+
+    try {
+      // Convert to the format expected by the API
+      const apiMessages = newMessages.map((msg) => ({
+        id: msg.id,
+        role: msg.role,
+        parts: [{ type: 'text', text: msg.content }],
+      }))
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ messages: apiMessages }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+
+      const data = await response.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.response,
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Chat error:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -139,12 +176,12 @@ export function Chat() {
                   )}
                 >
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {getUIMessageText(message.parts)}
+                    {message.content}
                   </p>
                 </div>
               </div>
             ))}
-            {isLoading && messages[messages.length - 1]?.role === 'user' && (
+            {isLoading && (
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center">
                   <Bot className="w-4 h-4" />
