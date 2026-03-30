@@ -37,8 +37,8 @@ export async function POST(req: Request) {
       content: extractTextFromParts(msg.parts),
     }))
 
-    // Get the latest user message
-    const latestMessage = history[history.length - 1]?.content || ''
+    // Get the latest user message and strip newlines
+    const latestMessage = (history[history.length - 1]?.content || '').replace(/\n/g, ' ')
     console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage })
 
     // Call the Power Automate API with Prompt payload
