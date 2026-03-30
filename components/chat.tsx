@@ -11,6 +11,16 @@ interface Message {
   content: string
 }
 
+function formatMessage(content: string) {
+  const parts = content.split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>
+    }
+    return part
+  })
+}
+
 export function Chat() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -176,7 +186,7 @@ export function Chat() {
                   )}
                 >
                   <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {message.content}
+                    {formatMessage(message.content)}
                   </p>
                 </div>
               </div>

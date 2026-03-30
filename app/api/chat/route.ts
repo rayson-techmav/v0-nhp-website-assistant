@@ -29,7 +29,6 @@ function extractTextFromParts(
 export async function POST(req: Request) {
   try {
     const { messages }: ChatRequest = await req.json()
-    console.log('[v0] Received messages:', messages.length)
 
     // Convert UI messages to simple format for the Power Automate API
     const history: Message[] = messages.map((msg) => ({
@@ -39,7 +38,6 @@ export async function POST(req: Request) {
 
     // Get the latest user message
     const latestMessage = history[history.length - 1]?.content || ''
-    console.log('[v0] Latest message:', latestMessage)
 
     // Call the Power Automate API with Prompt payload
     const response = await fetch(POWER_AUTOMATE_API, {
@@ -52,28 +50,27 @@ export async function POST(req: Request) {
       }),
     })
 
-    console.log('[v0] Power Automate response status:', response.status)
-
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[v0] Power Automate API error:', response.status, response.statusText, errorText)
       return new Response(
         JSON.stringify({ error: 'Failed to get response from AI agent', details: errorText }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       )
     }
 
-    const data = await response.json()
-    console.log('[v0] Power Automate response data:', data)
-    
-    // Extract the Response field from the Power Automate API
-    const assistantResponse = data.Response || ''
-    console.log('[v0] Extracted response:', assistantResponse)
+    // Safely parse — the API may return plain text or JSON
+    const rawText = await response.text()
+    let assistantResponse = rawText
 
-    // Return as a simple JSON response that the client will handle
+    try {
+      const data = JSON.parse(rawText)
+      assistantResponse = data.Response ?? rawText
+    } catch {
+      // Response was plain text, use as-is
+    }
+
     return Response.json({ response: assistantResponse })
   } catch (error) {
-    console.error('[v0] API route error:', error)
     return new Response(
       JSON.stringify({ error: 'Internal server error', details: String(error) }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
