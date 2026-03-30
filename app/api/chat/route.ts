@@ -65,23 +65,23 @@ export async function POST(req: Request) {
 
     // Safely parse — the API may return plain text or JSON
     const rawText = await response.text()
-    console.log('[v0] Raw response:', rawText)
-    let assistantResponse = rawText
+    let assistantResponse = ''
 
     try {
       const data = JSON.parse(rawText)
-      assistantResponse = data.Response ?? rawText
+      assistantResponse = data.Response || rawText
       console.log('[v0] Extracted Response field:', assistantResponse)
-    } catch {
-      console.log('[v0] Response was plain text, using as-is')
-      // Response was plain text, use as-is
+    } catch (parseError) {
+      // Response was plain text or malformed, use as-is
+      assistantResponse = rawText
+      console.log('[v0] Could not parse as JSON, using raw text')
     }
 
     console.log('[v0] Returning:', { response: assistantResponse })
     return Response.json({ response: assistantResponse })
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error('[v0] API route caught error:', errorMessage)
+    console.error('[v0] API route caught error:', errorMessage, error)
     return Response.json(
       { error: 'Internal server error', details: errorMessage },
       { status: 500 }
