@@ -58,7 +58,10 @@ export function Chat() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        const errorData = await response.text()
+        console.log('[v0] API Response Status:', response.status)
+        console.log('[v0] API Response Body:', errorData)
+        throw new Error(`Failed to get response: ${response.status}`)
       }
 
       const data = await response.json()

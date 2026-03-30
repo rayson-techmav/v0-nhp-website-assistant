@@ -38,22 +38,22 @@ export async function POST(req: Request) {
   // Get the latest user message
   const latestMessage = history[history.length - 1]?.content || ''
 
-  // Call the Power Automate API
+  // Call the Power Automate API with Prompt payload
   const response = await fetch(POWER_AUTOMATE_API, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      text: latestMessage,
-      history: history,
+      Prompt: latestMessage,
     }),
   })
 
   if (!response.ok) {
-    console.error('[v0] Power Automate API error:', response.status, response.statusText)
+    const errorText = await response.text()
+    console.error('[v0] Power Automate API error:', response.status, response.statusText, errorText)
     return new Response(
-      JSON.stringify({ error: 'Failed to get response from AI agent' }),
+      JSON.stringify({ error: 'Failed to get response from AI agent', details: errorText }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
