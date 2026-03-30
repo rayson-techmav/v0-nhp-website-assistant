@@ -69,21 +69,12 @@ export function Chat() {
         body: JSON.stringify({ messages: apiMessages }),
       })
 
-      console.log('[v0] Chat API response status:', response.status)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('[v0] Chat API error:', response.status, errorData)
-        throw new Error(`API error: ${response.status}`)
-      }
-
-      const data = await response.json()
-      console.log('[v0] Chat API response data:', data)
+      const data = await response.json().catch(() => ({}))
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || 'No response received',
+        content: data.response || data.error || 'Sorry, I was unable to get a response. Please try again.',
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -143,9 +134,9 @@ export function Chat() {
             </p>
             <div className="mt-6 flex flex-wrap gap-2 justify-center">
               {[
-                'Tell me about NHP products',
-                'What automation solutions do you offer?',
-                'Industrial safety equipment',
+                'Give me stock levels for a given product',
+                'Product price',
+                'Help me track my order',
               ].map((suggestion) => (
                 <button
                   key={suggestion}

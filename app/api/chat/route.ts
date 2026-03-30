@@ -57,10 +57,9 @@ export async function POST(req: Request) {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('[v0] Power Automate error:', response.status, errorText)
-      return Response.json(
-        { error: 'Failed to get response from AI agent', details: errorText },
-        { status: 500 }
-      )
+      return Response.json({
+        response: 'Sorry, I was unable to get a response at this time. Please try again shortly.',
+      })
     }
 
     // Safely parse — the API may return plain text or JSON
@@ -82,9 +81,8 @@ export async function POST(req: Request) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
     console.error('[v0] API route caught error:', errorMessage, error)
-    return Response.json(
-      { error: 'Internal server error', details: errorMessage },
-      { status: 500 }
-    )
+    return Response.json({
+      response: 'Sorry, something went wrong on my end. Please try again.',
+    })
   }
 }
