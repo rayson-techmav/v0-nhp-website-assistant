@@ -4,21 +4,13 @@ import { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-}
-
-function formatMessage(content: string) {
-  const parts = content.split(/(\*\*[^*]+\*\*)/g)
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i}>{part.slice(2, -2)}</strong>
-    }
-    return part
-  })
 }
 
 export function Chat() {
@@ -140,6 +132,7 @@ export function Chat() {
                 'Give me stock levels for a given product',
                 'Product price',
                 'Help me track my order',
+                'Refund Order',
               ].map((suggestion) => (
                 <button
                   key={suggestion}
@@ -186,9 +179,11 @@ export function Chat() {
                       : 'bg-card text-card-foreground border border-border rounded-bl-md'
                   )}
                 >
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                    {formatMessage(message.content)}
-                  </p>
+                  <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-table:my-2 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-th:bg-muted prose-th:text-left prose-table:border prose-table:border-border prose-th:border prose-th:border-border prose-td:border prose-td:border-border">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
             ))}
