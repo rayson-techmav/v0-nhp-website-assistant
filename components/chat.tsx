@@ -140,6 +140,7 @@ export function Chat() {
                 'Give me stock levels for a given product',
                 'Product price',
                 'Help me track my order',
+                'Refund Order',
               ].map((suggestion) => (
                 <button
                   key={suggestion}
