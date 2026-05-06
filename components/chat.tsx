@@ -181,9 +181,9 @@ export function Chat() {
                 >
                   <div 
                     className={cn(
-                      "text-sm leading-relaxed max-w-none [&_p]:my-1 [&_table]:my-2 [&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-2 [&_th]:text-left [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-border [&_td]:border [&_td]:border-border [&_th]:bg-muted [&_a]:underline",
+                      "text-sm leading-relaxed max-w-none [&_p]:my-1 [&_table]:my-2 [&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-2 [&_th]:text-left [&_table]:border-collapse [&_table]:w-full [&_th]:border-b-2 [&_th]:border-border [&_td]:border-0 [&_a]:underline",
                       message.role === 'user' 
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white' 
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_th]:text-white [&_td]:text-white' 
                         : 'text-card-foreground [&_th]:text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
