@@ -175,11 +175,18 @@ export function Chat() {
                   className={cn(
                     'rounded-2xl px-4 py-3 max-w-[80%]',
                     message.role === 'user'
-                      ? 'bg-secondary text-secondary-foreground rounded-br-md'
-                      : 'bg-card text-card-foreground border border-border rounded-bl-md'
+                      ? 'bg-secondary rounded-br-md'
+                      : 'bg-card border border-border rounded-bl-md'
                   )}
                 >
-                  <div className="text-sm leading-relaxed prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-table:my-2 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2 prose-th:bg-muted prose-th:text-left prose-table:border prose-table:border-border prose-th:border prose-th:border-border prose-td:border prose-td:border-border">
+                  <div 
+                    className={cn(
+                      "text-sm leading-relaxed max-w-none [&_p]:my-1 [&_table]:my-2 [&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-2 [&_th]:text-left [&_table]:border-collapse [&_table]:w-full [&_th]:border-b-2 [&_th]:border-border [&_td]:border-0 [&_a]:underline",
+                      message.role === 'user' 
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_th]:text-white [&_td]:text-white' 
+                        : 'text-card-foreground [&_th]:text-card-foreground [&_td]:text-card-foreground'
+                    )}
+                  >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {message.content}
                     </ReactMarkdown>
