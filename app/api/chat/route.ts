@@ -11,6 +11,7 @@ interface ChatRequest {
     role: string
     parts: Array<{ type: string; text?: string }>
   }>
+  escalated?: boolean
 }
 
 const POWER_AUTOMATE_API =
@@ -58,10 +59,51 @@ function extractTextFromParts(
     .join('')
 }
 
+async function sendToGenesys(prompt: string): Promise<{ success: boolean; response: string }> {
+  try {
+    const firstName = process.env.CUSTOMER_FIRST_NAME || ''
+    const lastName = process.env.CUSTOMER_LAST_NAME || ''
+    const email = process.env.CUSTOMER_EMAIL || ''
+
+    console.log('[v0] Sending message to Genesys Cloud API')
+
+    const response = await fetch(GENESYS_CLOUD_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        FirstName: firstName,
+        LastName: lastName,
+        Email: email,
+        Prompt: prompt,
+      }),
+    })
+
+    console.log('[v0] Genesys Cloud API response status:', response.status)
+    
+    if (response.ok) {
+      const rawText = await response.text()
+      let genesysResponse = ''
+      try {
+        const data = JSON.parse(rawText)
+        genesysResponse = data.Response || data.response || rawText
+      } catch {
+        genesysResponse = rawText
+      }
+      return { success: true, response: genesysResponse || 'Message sent to live agent.' }
+    }
+    return { success: false, response: 'Failed to send message to live agent.' }
+  } catch (error) {
+    console.error('[v0] Genesys Cloud API error:', error)
+    return { success: false, response: 'Failed to connect to live agent.' }
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const { messages }: ChatRequest = await req.json()
-    console.log('[v0] Received request with', messages.length, 'messages')
+    const { messages, escalated: isEscalated }: ChatRequest = await req.json()
+    console.log('[v0] Received request with', messages.length, 'messages, escalated:', isEscalated)
 
     // Convert UI messages to simple format for the Power Automate API
     const history: Message[] = messages.map((msg) => ({
@@ -72,6 +114,16 @@ export async function POST(req: Request) {
     // Get the latest user message and strip newlines
     const latestMessage = (history[history.length - 1]?.content || '').replace(/\n/g, ' ')
     
+    // If already escalated, route all messages to Genesys Cloud API
+    if (isEscalated) {
+      console.log('[v0] Session is escalated, routing to Genesys Cloud API')
+      const result = await sendToGenesys(latestMessage)
+      return Response.json({ 
+        response: result.response,
+        escalated: true 
+      })
+    }
+
     // Check if the user message contains [ESCALATE] - skip Power Automate and go directly to Genesys
     if (latestMessage.includes('[ESCALATE]')) {
       console.log('[v0] User triggered escalation, calling Genesys Cloud API directly')
