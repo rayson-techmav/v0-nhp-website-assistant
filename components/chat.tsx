@@ -17,6 +17,7 @@ export function Chat() {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [isEscalated, setIsEscalated] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -58,13 +59,23 @@ export function Chat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ messages: apiMessages, escalated: isEscalated }),
       })
 
       console.log('[v0] Chat API response status:', response.status)
 
       const data = await response.json().catch(() => ({}))
       console.log('[v0] Chat API response data:', data)
+
+      // If escalated flag is returned, set the escalated state
+      if (data.escalated) {
+        setIsEscalated(true)
+      }
+
+      // Don't show the response if hideResponse flag is set (for escalated messages to live agent)
+      if (data.hideResponse) {
+        return
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
