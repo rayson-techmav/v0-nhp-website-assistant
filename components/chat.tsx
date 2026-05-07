@@ -20,7 +20,9 @@ export function Chat() {
   const [isEscalated, setIsEscalated] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const eventSourceRef = useRef<EventSource | null>(null)
+  const lastTimestampRef = useRef<number>(Date.now())
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const receivedMessageIdsRef = useRef<Set<string>>(new Set())
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -30,51 +32,60 @@ export function Chat() {
     scrollToBottom()
   }, [messages])
 
-  // Connect to SSE for receiving messages from Genesys when escalated
+  // Poll for messages from Genesys when escalated
   useEffect(() => {
-    if (isEscalated && !eventSourceRef.current) {
-      console.log('[v0] Connecting to Genesys webhook SSE...')
-      const eventSource = new EventSource('/api/genesys-webhook?sessionId=default')
-      eventSourceRef.current = eventSource
-
-      eventSource.onmessage = (event) => {
+    if (isEscalated && !pollingIntervalRef.current) {
+      // Set initial timestamp to now so we only get new messages
+      lastTimestampRef.current = Date.now()
+      
+      const pollForMessages = async () => {
         try {
-          const data = JSON.parse(event.data)
-          console.log('[v0] Received message from Genesys:', data)
+          const response = await fetch(
+            `/api/genesys-webhook?sessionId=default&since=${lastTimestampRef.current}`
+          )
+          const data = await response.json()
           
-          const agentMessage: Message = {
-            id: data.id || Date.now().toString(),
-            role: 'assistant',
-            content: data.content,
+          if (data.messages && data.messages.length > 0) {
+            // Filter out messages we've already received (by ID)
+            const newMessages = data.messages.filter(
+              (msg: { id: string }) => !receivedMessageIdsRef.current.has(msg.id)
+            )
+            
+            if (newMessages.length > 0) {
+              // Add new message IDs to our set
+              newMessages.forEach((msg: { id: string }) => {
+                receivedMessageIdsRef.current.add(msg.id)
+              })
+              
+              // Add messages to chat
+              const agentMessages: Message[] = newMessages.map(
+                (msg: { id: string; content: string }) => ({
+                  id: msg.id,
+                  role: 'assistant' as const,
+                  content: msg.content,
+                })
+              )
+              
+              setMessages((prev) => [...prev, ...agentMessages])
+            }
+            
+            // Update timestamp for next poll
+            lastTimestampRef.current = data.lastTimestamp
           }
-          
-          setMessages((prev) => [...prev, agentMessage])
         } catch (error) {
-          console.error('[v0] Error parsing SSE message:', error)
+          console.error('[v0] Error polling for messages:', error)
         }
       }
 
-      eventSource.onerror = (error) => {
-        console.error('[v0] SSE connection error:', error)
-        // Attempt to reconnect after a delay
-        setTimeout(() => {
-          if (eventSourceRef.current) {
-            eventSourceRef.current.close()
-            eventSourceRef.current = null
-          }
-        }, 5000)
-      }
-
-      eventSource.onopen = () => {
-        console.log('[v0] SSE connection established')
-      }
+      // Poll immediately, then every 2 seconds
+      pollForMessages()
+      pollingIntervalRef.current = setInterval(pollForMessages, 2000)
     }
 
     return () => {
-      if (eventSourceRef.current) {
-        console.log('[v0] Closing SSE connection')
-        eventSourceRef.current.close()
-        eventSourceRef.current = null
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current)
+        pollingIntervalRef.current = null
       }
     }
   }, [isEscalated])
