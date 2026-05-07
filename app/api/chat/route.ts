@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     // Check if the response contains [ESCALATE] to transfer to live agent
     if (assistantResponse.includes('[ESCALATE]')) {
       console.log('[v0] Escalation detected, transferring to live agent')
-      const escalationSuccess = await escalateToLiveAgent(latestMessage)
+      const escalationSuccess = await escalateToLiveAgent('A Website Customer wants to chat with you')
       
       if (escalationSuccess) {
         // Remove the [ESCALATE] tag and return a user-friendly message
