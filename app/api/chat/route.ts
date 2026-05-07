@@ -120,7 +120,8 @@ export async function POST(req: Request) {
       const result = await sendToGenesys(latestMessage)
       return Response.json({ 
         response: result.response,
-        escalated: true 
+        escalated: true,
+        hideResponse: true 
       })
     }
 

@@ -72,6 +72,11 @@ export function Chat() {
         setIsEscalated(true)
       }
 
+      // Don't show the response if hideResponse flag is set (for escalated messages to live agent)
+      if (data.hideResponse) {
+        return
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
