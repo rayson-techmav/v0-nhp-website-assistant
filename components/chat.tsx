@@ -20,6 +20,7 @@ export function Chat() {
   const [isEscalated, setIsEscalated] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -28,6 +29,55 @@ export function Chat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Connect to SSE for receiving messages from Genesys when escalated
+  useEffect(() => {
+    if (isEscalated && !eventSourceRef.current) {
+      console.log('[v0] Connecting to Genesys webhook SSE...')
+      const eventSource = new EventSource('/api/genesys-webhook?sessionId=default')
+      eventSourceRef.current = eventSource
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          console.log('[v0] Received message from Genesys:', data)
+          
+          const agentMessage: Message = {
+            id: data.id || Date.now().toString(),
+            role: 'assistant',
+            content: data.content,
+          }
+          
+          setMessages((prev) => [...prev, agentMessage])
+        } catch (error) {
+          console.error('[v0] Error parsing SSE message:', error)
+        }
+      }
+
+      eventSource.onerror = (error) => {
+        console.error('[v0] SSE connection error:', error)
+        // Attempt to reconnect after a delay
+        setTimeout(() => {
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close()
+            eventSourceRef.current = null
+          }
+        }, 5000)
+      }
+
+      eventSource.onopen = () => {
+        console.log('[v0] SSE connection established')
+      }
+    }
+
+    return () => {
+      if (eventSourceRef.current) {
+        console.log('[v0] Closing SSE connection')
+        eventSourceRef.current.close()
+        eventSourceRef.current = null
+      }
+    }
+  }, [isEscalated])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
