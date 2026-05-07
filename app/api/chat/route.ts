@@ -16,6 +16,38 @@ interface ChatRequest {
 const POWER_AUTOMATE_API =
   'https://605e3ed6b18fece1ad544f71a003a6.cb.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0db87d31dec84b7daa140ccfbbb8f968/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=93ExXpFQwQWAmgCnn1uyKKwZPWeb5NwHzDMfm2PNzH4'
 
+const GENESYS_CLOUD_API =
+  'https://605e3ed6b18fece1ad544f71a003a6.cb.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/41478e13f8cc4b1ebd895e389ba246a7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XpycNM_p9jQhlqBkH__DdFJJe9ZDOAQWzqCWq4ET5P8'
+
+async function escalateToLiveAgent(prompt: string): Promise<boolean> {
+  try {
+    const firstName = process.env.CUSTOMER_FIRST_NAME || ''
+    const lastName = process.env.CUSTOMER_LAST_NAME || ''
+    const email = process.env.CUSTOMER_EMAIL || ''
+
+    console.log('[v0] Escalating to live agent via Genesys Cloud API')
+
+    const response = await fetch(GENESYS_CLOUD_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        FirstName: firstName,
+        LastName: lastName,
+        Email: email,
+        Prompt: prompt,
+      }),
+    })
+
+    console.log('[v0] Genesys Cloud API response status:', response.status)
+    return response.ok
+  } catch (error) {
+    console.error('[v0] Genesys Cloud API error:', error)
+    return false
+  }
+}
+
 function extractTextFromParts(
   parts: Array<{ type: string; text?: string }>
 ): string {
@@ -82,6 +114,26 @@ export async function POST(req: Request) {
       // Response was plain text or malformed, use as-is
       assistantResponse = rawText
       console.log('[v0] Could not parse as JSON, using raw text')
+    }
+
+    // Check if the response contains [ESCALATE] to transfer to live agent
+    if (assistantResponse.includes('[ESCALATE]')) {
+      console.log('[v0] Escalation detected, transferring to live agent')
+      const escalationSuccess = await escalateToLiveAgent(latestMessage)
+      
+      if (escalationSuccess) {
+        // Remove the [ESCALATE] tag and return a user-friendly message
+        const cleanedResponse = assistantResponse.replace('[ESCALATE]', '').trim()
+        const escalationMessage = cleanedResponse || 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.'
+        console.log('[v0] Escalation successful, returning:', { response: escalationMessage, escalated: true })
+        return Response.json({ response: escalationMessage, escalated: true })
+      } else {
+        console.log('[v0] Escalation failed')
+        return Response.json({ 
+          response: 'I tried to connect you with a live agent, but there was an issue. Please try again or contact support directly.',
+          escalated: false 
+        })
+      }
     }
 
     console.log('[v0] Returning:', { response: assistantResponse })
