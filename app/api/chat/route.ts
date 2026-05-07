@@ -72,6 +72,26 @@ export async function POST(req: Request) {
     // Get the latest user message and strip newlines
     const latestMessage = (history[history.length - 1]?.content || '').replace(/\n/g, ' ')
     
+    // Check if the user message contains [ESCALATE] - skip Power Automate and go directly to Genesys
+    if (latestMessage.includes('[ESCALATE]')) {
+      console.log('[v0] User triggered escalation, calling Genesys Cloud API directly')
+      const escalationSuccess = await escalateToLiveAgent('A Website Customer wants to chat with you')
+      
+      if (escalationSuccess) {
+        console.log('[v0] Escalation successful')
+        return Response.json({ 
+          response: 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.',
+          escalated: true 
+        })
+      } else {
+        console.log('[v0] Escalation failed')
+        return Response.json({ 
+          response: 'I tried to connect you with a live agent, but there was an issue. Please try again or contact support directly.',
+          escalated: false 
+        })
+      }
+    }
+
     // Format conversation history as text (excluding the latest message)
     const historyText = history
       .slice(0, -1)
