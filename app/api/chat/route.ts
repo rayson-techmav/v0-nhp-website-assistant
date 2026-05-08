@@ -63,6 +63,7 @@ async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
     const historyMessage = `-----------------Chat History-----------------\n${chatTranscript}\n-----------------End of Chat History-----------------`
 
     console.log('[v0] Sending chat history to Genesys Cloud API')
+    console.log('[v0] Chat history message length:', historyMessage.length)
 
     const response = await fetch(GENESYS_CLOUD_API, {
       method: 'POST',
@@ -77,7 +78,9 @@ async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
       }),
     })
 
+    const responseText = await response.text()
     console.log('[v0] Chat history sent to Genesys, response status:', response.status)
+    console.log('[v0] Chat history response:', responseText.substring(0, 200))
     return response.ok
   } catch (error) {
     console.error('[v0] Error sending chat history to Genesys:', error)
@@ -167,9 +170,10 @@ export async function POST(req: Request) {
       const escalationSuccess = await escalateToLiveAgent('-----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you')
 
       if (escalationSuccess) {
-        console.log('[v0] Escalation successful')
+        console.log('[v0] Escalation successful, now sending chat history')
         // Send the entire chat history to Genesys in a separate message
-        await sendChatHistoryToGenesys(history)
+        const historySuccess = await sendChatHistoryToGenesys(history)
+        console.log('[v0] Chat history send result:', historySuccess)
         return Response.json({
           response: 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.',
           escalated: true
@@ -233,8 +237,10 @@ export async function POST(req: Request) {
       const escalationSuccess = await escalateToLiveAgent('----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you')
 
       if (escalationSuccess) {
+        console.log('[v0] Escalation successful, now sending chat history')
         // Send the entire chat history to Genesys in a separate message
-        await sendChatHistoryToGenesys(history)
+        const historySuccess = await sendChatHistoryToGenesys(history)
+        console.log('[v0] Chat history send result:', historySuccess)
         // Remove the [ESCALATE] tag and return a user-friendly message
         const cleanedResponse = assistantResponse.replace('[ESCALATE]', '').trim()
         const escalationMessage = cleanedResponse || 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.'
