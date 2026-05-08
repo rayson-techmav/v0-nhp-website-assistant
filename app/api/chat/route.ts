@@ -60,7 +60,7 @@ async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
       .map((msg) => `${msg.role === 'user' ? 'Customer' : 'Bot'}: ${msg.content}`)
       .join('\n\n')
 
-    const historyMessage = `-----------------Chat History-----------------\n${chatTranscript}\n-----------------End of Chat History-----------------`
+    const historyMessage = `-----------------Chat History-----------------\n${chatTranscript}`
 
     console.log('[v0] Sending chat history to Genesys Cloud API')
     console.log('[v0] Chat history message length:', historyMessage.length)
@@ -224,7 +224,7 @@ export async function POST(req: Request) {
 
     try {
       const data = JSON.parse(rawText)
-      
+
       // Check if this is a structured response with escalation intent
       if (data.explanation_of_tool_call && typeof data.explanation_of_tool_call === 'string') {
         // This is a tool call explanation (e.g., escalation intent)
@@ -235,7 +235,7 @@ export async function POST(req: Request) {
           console.log('[v0] Detected escalation from tool explanation')
         }
       }
-      
+
       // Otherwise extract Response field if available
       if (!shouldEscalate) {
         assistantResponse = data.Response || rawText
