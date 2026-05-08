@@ -220,19 +220,35 @@ export async function POST(req: Request) {
     // Safely parse — the API may return plain text or JSON
     const rawText = await response.text()
     let assistantResponse = ''
+    let shouldEscalate = false
 
     try {
       const data = JSON.parse(rawText)
-      assistantResponse = data.Response || rawText
-      console.log('[v0] Extracted Response field:', assistantResponse)
+      
+      // Check if this is a structured response with escalation intent
+      if (data.explanation_of_tool_call && typeof data.explanation_of_tool_call === 'string') {
+        // This is a tool call explanation (e.g., escalation intent)
+        const explanation = data.explanation_of_tool_call.toLowerCase()
+        if (explanation.includes('human') || explanation.includes('escalate') || explanation.includes('live agent') || explanation.includes('representative')) {
+          shouldEscalate = true
+          assistantResponse = data.explanation_of_tool_call
+          console.log('[v0] Detected escalation from tool explanation')
+        }
+      }
+      
+      // Otherwise extract Response field if available
+      if (!shouldEscalate) {
+        assistantResponse = data.Response || rawText
+        console.log('[v0] Extracted Response field:', assistantResponse)
+      }
     } catch (parseError) {
       // Response was plain text or malformed, use as-is
       assistantResponse = rawText
       console.log('[v0] Could not parse as JSON, using raw text')
     }
 
-    // Check if the response contains [ESCALATE] to transfer to live agent
-    if (assistantResponse.includes('[ESCALATE]')) {
+    // Check if the response contains [ESCALATE] tag OR if escalation was detected from structure
+    if (shouldEscalate || assistantResponse.includes('[ESCALATE]')) {
       console.log('[v0] Escalation detected, transferring to live agent')
       const escalationSuccess = await escalateToLiveAgent('----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you')
 
@@ -241,9 +257,12 @@ export async function POST(req: Request) {
         // Send the entire chat history to Genesys in a separate message
         const historySuccess = await sendChatHistoryToGenesys(history)
         console.log('[v0] Chat history send result:', historySuccess)
-        // Remove the [ESCALATE] tag and return a user-friendly message
-        const cleanedResponse = assistantResponse.replace('[ESCALATE]', '').trim()
-        const escalationMessage = cleanedResponse || 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.'
+        // Remove the [ESCALATE] tag if present and return a user-friendly message
+        let escalationMessage = assistantResponse.replace('[ESCALATE]', '').trim()
+        if (!escalationMessage || escalationMessage === assistantResponse) {
+          // If no [ESCALATE] tag or response is structured JSON, use generic message
+          escalationMessage = 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.'
+        }
         console.log('[v0] Escalation successful, returning:', { response: escalationMessage, escalated: true })
         return Response.json({ response: escalationMessage, escalated: true })
       } else {
