@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     // Check if the user message contains [ESCALATE] - skip Power Automate and go directly to Genesys
     if (latestMessage.includes('[ESCALATE]')) {
       console.log('[v0] User triggered escalation, calling Genesys Cloud API directly')
-      const escalationSuccess = await escalateToLiveAgent('-----------' + (new Date()).toDateString() + '-----------\nA Website Customer wants to chat with you')
+      const escalationSuccess = await escalateToLiveAgent('---------------' + (new Date()).toDateString() + '---------------\nA Website Customer wants to chat with you')
 
       if (escalationSuccess) {
         console.log('[v0] Escalation successful')
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
     // Check if the response contains [ESCALATE] to transfer to live agent
     if (assistantResponse.includes('[ESCALATE]')) {
       console.log('[v0] Escalation detected, transferring to live agent')
-      const escalationSuccess = await escalateToLiveAgent('-----------' + (new Date()).toDateString() + '-----------\nA Website Customer wants to chat with you')
+      const escalationSuccess = await escalateToLiveAgent('--------------' + (new Date()).toDateString() + '---------------\nA Website Customer wants to chat with you')
 
       if (escalationSuccess) {
         // Remove the [ESCALATE] tag and return a user-friendly message
