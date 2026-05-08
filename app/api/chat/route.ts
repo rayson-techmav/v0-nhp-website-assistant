@@ -81,7 +81,7 @@ async function sendToGenesys(prompt: string): Promise<{ success: boolean; respon
     })
 
     console.log('[v0] Genesys Cloud API response status:', response.status)
-    
+
     if (response.ok) {
       const rawText = await response.text()
       let genesysResponse = ''
@@ -113,34 +113,34 @@ export async function POST(req: Request) {
 
     // Get the latest user message and strip newlines
     const latestMessage = (history[history.length - 1]?.content || '').replace(/\n/g, ' ')
-    
+
     // If already escalated, route all messages to Genesys Cloud API
     if (isEscalated) {
       console.log('[v0] Session is escalated, routing to Genesys Cloud API')
       const result = await sendToGenesys(latestMessage)
-      return Response.json({ 
+      return Response.json({
         response: result.response,
         escalated: true,
-        hideResponse: true 
+        hideResponse: true
       })
     }
 
     // Check if the user message contains [ESCALATE] - skip Power Automate and go directly to Genesys
     if (latestMessage.includes('[ESCALATE]')) {
       console.log('[v0] User triggered escalation, calling Genesys Cloud API directly')
-      const escalationSuccess = await escalateToLiveAgent('A Website Customer wants to chat with you')
-      
+      const escalationSuccess = await escalateToLiveAgent('------------------------' + (new Date()).toDateString() + '--------------------------------\nA Website Customer wants to chat with you')
+
       if (escalationSuccess) {
         console.log('[v0] Escalation successful')
-        return Response.json({ 
+        return Response.json({
           response: 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.',
-          escalated: true 
+          escalated: true
         })
       } else {
         console.log('[v0] Escalation failed')
-        return Response.json({ 
+        return Response.json({
           response: 'I tried to connect you with a live agent, but there was an issue. Please try again or contact support directly.',
-          escalated: false 
+          escalated: false
         })
       }
     }
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       .slice(0, -1)
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n')
-    
+
     console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage, History: historyText })
 
     // Call the Power Automate API with Prompt and History payload
@@ -192,8 +192,8 @@ export async function POST(req: Request) {
     // Check if the response contains [ESCALATE] to transfer to live agent
     if (assistantResponse.includes('[ESCALATE]')) {
       console.log('[v0] Escalation detected, transferring to live agent')
-      const escalationSuccess = await escalateToLiveAgent('A Website Customer wants to chat with you')
-      
+      const escalationSuccess = await escalateToLiveAgent('------------------------' + (new Date()).toDateString() + '--------------------------------\nA Website Customer wants to chat with you')
+
       if (escalationSuccess) {
         // Remove the [ESCALATE] tag and return a user-friendly message
         const cleanedResponse = assistantResponse.replace('[ESCALATE]', '').trim()
@@ -202,9 +202,9 @@ export async function POST(req: Request) {
         return Response.json({ response: escalationMessage, escalated: true })
       } else {
         console.log('[v0] Escalation failed')
-        return Response.json({ 
+        return Response.json({
           response: 'I tried to connect you with a live agent, but there was an issue. Please try again or contact support directly.',
-          escalated: false 
+          escalated: false
         })
       }
     }
