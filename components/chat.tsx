@@ -310,16 +310,18 @@ export function Chat() {
                       "[&_p]:my-1",
                       "[&_a]:underline",
                       // Table: grey border around perimeter, no inner gridlines, full width
-                      "[&_table]:my-2 [&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:border-2 [&_table]:border-gray-300 [&_table]:rounded-lg",
-                      // Header: shaded background, no borders
+                      "[&_table]:my-2 [&_table]:w-full [&_table]:border-separate [&_table]:border-spacing-0 [&_table]:border-2 [&_table]:border-gray-300 [&_table]:rounded-lg [&_table]:overflow-hidden",
+                      // Header: shaded background, no borders, rounded corners on first row
                       "[&_thead]:bg-[#1D487C]",
+                      "[&_thead_tr:first-child_th:first-child]:rounded-tl-md",
+                      "[&_thead_tr:first-child_th:last-child]:rounded-tr-md",
                       "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0 [&_th]:text-white",
                       // Body rows: banded (even rows shaded), no borders
                       "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
-                      "[&_tbody_tr:nth-child(even)]:bg-muted/40",
-                      "[&_tbody_tr:nth-child(odd)]:bg-transparent",
+                      "[&_tbody_tr:nth-child(even)]:bg-gray-100",
+                      "[&_tbody_tr:nth-child(odd)]:bg-white",
                       message.role === 'user'
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-child(even)]:bg-white/10'
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-child(even)]:bg-white/15 [&_tbody_tr:nth-child(odd)]:bg-white/5'
                         : 'text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
