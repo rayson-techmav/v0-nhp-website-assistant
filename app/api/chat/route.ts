@@ -16,7 +16,7 @@ interface ChatRequest {
 
 
 
-async function escalateToLiveAgent(prompt: string): Promise<boolean> {
+async function escalateToLiveAgent(prompt: string, genesysApiUrl: string): Promise<boolean> {
   try {
     const firstName = process.env.CUSTOMER_FIRST_NAME || ''
     const lastName = process.env.CUSTOMER_LAST_NAME || ''
@@ -24,7 +24,7 @@ async function escalateToLiveAgent(prompt: string): Promise<boolean> {
 
     console.log('[v0] Escalating to live agent via Genesys Cloud API')
 
-    const response = await fetch(GENESYS_CLOUD_API, {
+    const response = await fetch(genesysApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ async function escalateToLiveAgent(prompt: string): Promise<boolean> {
   }
 }
 
-async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
+async function sendChatHistoryToGenesys(history: Message[], genesysApiUrl: string): Promise<boolean> {
   try {
     const firstName = process.env.CUSTOMER_FIRST_NAME || ''
     const lastName = process.env.CUSTOMER_LAST_NAME || ''
@@ -61,7 +61,7 @@ async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
     console.log('[v0] Sending chat history to Genesys Cloud API')
     console.log('[v0] Chat history message length:', historyMessage.length)
 
-    const response = await fetch(GENESYS_CLOUD_API, {
+    const response = await fetch(genesysApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -94,7 +94,7 @@ function extractTextFromParts(
     .join('')
 }
 
-async function sendToGenesys(prompt: string): Promise<{ success: boolean; response: string; ended: boolean }> {
+async function sendToGenesys(prompt: string, genesysApiUrl: string): Promise<{ success: boolean; response: string; ended: boolean }> {
   try {
     const firstName = process.env.CUSTOMER_FIRST_NAME || ''
     const lastName = process.env.CUSTOMER_LAST_NAME || ''
@@ -102,7 +102,7 @@ async function sendToGenesys(prompt: string): Promise<{ success: boolean; respon
 
     console.log('[v0] Sending message to Genesys Cloud API')
 
-    const response = await fetch(GENESYS_CLOUD_API, {
+    const response = await fetch(genesysApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ export async function POST(req: Request) {
     // If already escalated, route all messages to Genesys Cloud API
     if (isEscalated) {
       console.log('[v0] Session is escalated, routing to Genesys Cloud API')
-      const result = await sendToGenesys(latestMessage)
+      const result = await sendToGenesys(latestMessage, GENESYS_CLOUD_API)
       
       // If Genesys returned [END], switch back to Power Automate
       if (result.ended) {
@@ -207,12 +207,12 @@ export async function POST(req: Request) {
     // Check if the user message contains [ESCALATE] - skip Power Automate and go directly to Genesys
     if (latestMessage.includes('[ESCALATE]')) {
       console.log('[v0] User triggered escalation, calling Genesys Cloud API directly')
-      const escalationSuccess = await escalateToLiveAgent('-----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you')
+      const escalationSuccess = await escalateToLiveAgent('-----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you', GENESYS_CLOUD_API)
 
       if (escalationSuccess) {
         console.log('[v0] Escalation successful, now sending chat history')
         // Send the entire chat history to Genesys in a separate message
-        const historySuccess = await sendChatHistoryToGenesys(history)
+        const historySuccess = await sendChatHistoryToGenesys(history, GENESYS_CLOUD_API)
         console.log('[v0] Chat history send result:', historySuccess)
         return Response.json({
           response: 'I am transferring you to a live agent who can better assist you. Please hold while we connect you.',
@@ -294,12 +294,12 @@ export async function POST(req: Request) {
     // Check if the response contains [ESCALATE] tag OR if escalation was detected from structure
     if (shouldEscalate || assistantResponse.includes('[ESCALATE]')) {
       console.log('[v0] Escalation detected, transferring to live agent')
-      const escalationSuccess = await escalateToLiveAgent('----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you')
+      const escalationSuccess = await escalateToLiveAgent('----------------' + (new Date()).toDateString() + '-----------------\nA Website Customer wants to chat with you', GENESYS_CLOUD_API)
 
       if (escalationSuccess) {
         console.log('[v0] Escalation successful, now sending chat history')
         // Send the entire chat history to Genesys in a separate message
-        const historySuccess = await sendChatHistoryToGenesys(history)
+        const historySuccess = await sendChatHistoryToGenesys(history, GENESYS_CLOUD_API)
         console.log('[v0] Chat history send result:', historySuccess)
         // Remove the [ESCALATE] tag if present and return a user-friendly message
         let escalationMessage = assistantResponse.replace('[ESCALATE]', '').trim()
