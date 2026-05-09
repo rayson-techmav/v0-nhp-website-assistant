@@ -60,7 +60,7 @@ async function sendChatHistoryToGenesys(history: Message[]): Promise<boolean> {
       .map((msg) => `${msg.role === 'user' ? 'Customer' : 'Bot'}: ${msg.content}`)
       .join('\n\n')
 
-    const historyMessage = `-----------------Chat History-----------------\n${chatTranscript}`
+    const historyMessage = `-------------------Chat History-------------------\n${chatTranscript}`
 
     console.log('[v0] Sending chat history to Genesys Cloud API')
     console.log('[v0] Chat history message length:', historyMessage.length)
