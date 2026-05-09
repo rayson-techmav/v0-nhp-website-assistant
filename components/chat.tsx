@@ -319,9 +319,9 @@ export function Chat() {
                       // Body rows: add bottom border to every row for visual separation
                       "[&_tbody_tr]:border-b [&_tbody_tr]:border-gray-200",
                       "[&_tbody_tr:last-child]:border-b-0",
-                      // Alternate row backgrounds
+                      // Alternate row backgrounds - use visible contrast
                       "[&_tbody_tr:nth-child(odd)]:bg-white",
-                      "[&_tbody_tr:nth-child(even)]:bg-gray-50",
+                      "[&_tbody_tr:nth-child(even)]:bg-gray-100",
                       "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       message.role === 'user'
                         ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-child(odd)]:bg-white/5 [&_tbody_tr:nth-child(even)]:bg-white/10 [&_tbody_tr]:border-white/10'
