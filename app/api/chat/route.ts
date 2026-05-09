@@ -14,8 +14,7 @@ interface ChatRequest {
   escalated?: boolean
 }
 
-const POWER_AUTOMATE_API = process.env.POWER_AUTOMATE_API || ''
-const GENESYS_CLOUD_API = process.env.GENESYS_CLOUD_API || ''
+
 
 async function escalateToLiveAgent(prompt: string): Promise<boolean> {
   try {
@@ -151,9 +150,14 @@ async function sendToGenesys(prompt: string): Promise<{ success: boolean; respon
 
 export async function POST(req: Request) {
   try {
+    // Read environment variables dynamically (not at module load time)
+    const POWER_AUTOMATE_API = process.env.POWER_AUTOMATE_API
+    const GENESYS_CLOUD_API = process.env.GENESYS_CLOUD_API
+
     // Validate required environment variables
     if (!POWER_AUTOMATE_API) {
       console.error('[v0] POWER_AUTOMATE_API environment variable is not set')
+      console.error('[v0] Available env vars:', Object.keys(process.env).filter(k => k.includes('POWER') || k.includes('GENESYS')))
       return Response.json({
         response: 'Sorry, the chat service is not configured properly. Please contact support.',
       }, { status: 500 })
