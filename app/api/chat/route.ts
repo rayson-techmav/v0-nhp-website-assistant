@@ -14,11 +14,8 @@ interface ChatRequest {
   escalated?: boolean
 }
 
-const POWER_AUTOMATE_API =
-  'https://605e3ed6b18fece1ad544f71a003a6.cb.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/0db87d31dec84b7daa140ccfbbb8f968/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=93ExXpFQwQWAmgCnn1uyKKwZPWeb5NwHzDMfm2PNzH4'
-
-const GENESYS_CLOUD_API =
-  'https://605e3ed6b18fece1ad544f71a003a6.cb.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/41478e13f8cc4b1ebd895e389ba246a7/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=XpycNM_p9jQhlqBkH__DdFJJe9ZDOAQWzqCWq4ET5P8'
+const POWER_AUTOMATE_API = process.env.POWER_AUTOMATE_API || ''
+const GENESYS_CLOUD_API = process.env.GENESYS_CLOUD_API || ''
 
 async function escalateToLiveAgent(prompt: string): Promise<boolean> {
   try {
