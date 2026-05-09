@@ -312,15 +312,15 @@ export function Chat() {
                       // Table: no gridlines, full width
                       "[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:border-0",
                       // Header: shaded background, no borders
-                      "[&_thead]:bg-primary/15",
-                      "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0",
+                      "[&_thead]:bg-[#1D487C]",
+                      "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0 [&_th]:text-white",
                       // Body rows: banded (even rows shaded), no borders
                       "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       "[&_tbody_tr:nth-child(even)]:bg-muted/40",
                       "[&_tbody_tr:nth-child(odd)]:bg-transparent",
                       message.role === 'user'
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_th]:text-white [&_td]:text-white [&_thead]:bg-white/20 [&_tbody_tr:nth-child(even)]:bg-white/10'
-                        : 'text-card-foreground [&_th]:text-card-foreground [&_td]:text-card-foreground'
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-child(even)]:bg-white/10'
+                        : 'text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
