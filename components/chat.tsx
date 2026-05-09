@@ -310,7 +310,7 @@ export function Chat() {
                       "[&_p]:my-1",
                       "[&_a]:underline",
                       // Table: grey border around perimeter, no inner gridlines, full width
-                      "[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:border-2 [&_table]:border-gray-300",
+                      "[&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:border-2 [&_table]:border-gray-300 [&_table]:rounded-lg [&_table]:overflow-hidden",
                       // Header: shaded background, no borders
                       "[&_thead]:bg-[#1D487C]",
                       "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0 [&_th]:text-white",
