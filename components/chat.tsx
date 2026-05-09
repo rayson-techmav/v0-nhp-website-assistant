@@ -316,15 +316,17 @@ export function Chat() {
                       "[&_thead_tr:first-child_th:first-child]:rounded-tl-md",
                       "[&_thead_tr:first-child_th:last-child]:rounded-tr-md",
                       "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0 [&_th]:text-white",
-                      // Body rows: add bottom border to every row for visual separation
+                      // Hide buffer/empty rows (rows with minimal content or dividers)
+                      "[&_tbody_tr:has(>_td:only-child)]:hidden",
+                      "[&_tbody_tr:has(>_td:only-child_[style*='height'])]:hidden",
+                      // Alternate row backgrounds using nth-of-type to skip hidden rows
+                      "[&_tbody_tr:nth-of-type(odd)]:bg-white",
+                      "[&_tbody_tr:nth-of-type(even)]:bg-gray-100",
+                      "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       "[&_tbody_tr]:border-b [&_tbody_tr]:border-gray-200",
                       "[&_tbody_tr:last-child]:border-b-0",
-                      // Alternate row backgrounds - use visible contrast
-                      "[&_tbody_tr:nth-child(odd)]:bg-white",
-                      "[&_tbody_tr:nth-child(even)]:bg-gray-100",
-                      "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       message.role === 'user'
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-child(odd)]:bg-white/5 [&_tbody_tr:nth-child(even)]:bg-white/10 [&_tbody_tr]:border-white/10'
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-of-type(odd)]:bg-white/5 [&_tbody_tr:nth-of-type(even)]:bg-white/10 [&_tbody_tr]:border-white/10'
                         : 'text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
