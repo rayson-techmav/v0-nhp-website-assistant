@@ -319,14 +319,15 @@ export function Chat() {
                       // Hide rows with colspan OR rows where all cells are empty
                       "[&_tbody_tr:has(td[colspan])]:hidden",
                       "[&_tbody_tr:not(:has(td:not(:empty)))]:hidden",
-                      // Alternate row backgrounds
-                      "[&_tbody_tr:nth-of-type(odd)]:bg-white",
-                      "[&_tbody_tr:nth-of-type(even)]:bg-gray-100",
+                      // Alternate row backgrounds - apply to all visible tbody rows
+                      "[&_tbody_tr]:bg-white",
+                      "[&_tbody_tr:nth-child(4n+3)]:bg-gray-100",
+                      "[&_tbody_tr:nth-child(4n+4)]:bg-gray-100",
                       "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       "[&_tbody_tr]:border-b [&_tbody_tr]:border-gray-200",
                       "[&_tbody_tr:last-child]:border-b-0",
                       message.role === 'user'
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr:nth-of-type(odd)]:bg-white/5 [&_tbody_tr:nth-of-type(even)]:bg-white/10 [&_tbody_tr]:border-white/10'
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_td]:text-white [&_tbody_tr]:bg-white/5 [&_tbody_tr:nth-child(4n+3)]:bg-white/10 [&_tbody_tr:nth-child(4n+4)]:bg-white/10 [&_tbody_tr]:border-white/10'
                         : 'text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
