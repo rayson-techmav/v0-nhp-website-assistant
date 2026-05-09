@@ -316,11 +316,12 @@ export function Chat() {
                       "[&_thead_tr:first-child_th:first-child]:rounded-tl-md",
                       "[&_thead_tr:first-child_th:last-child]:rounded-tr-md",
                       "[&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold [&_th]:border-0 [&_th]:text-white",
-                      // Hide buffer/separator rows (rows with colspan or single cell spanning)
+                      // Hide rows with colspan OR rows where all cells are empty
                       "[&_tbody_tr:has(td[colspan])]:hidden",
+                      "[&_tbody_tr:not(:has(td:not(:empty)))]:hidden",
                       // Alternate row backgrounds
-                      "[&_tbody_tr:nth-of-type(odd):not(:has(td[colspan]))]:bg-white",
-                      "[&_tbody_tr:nth-of-type(even):not(:has(td[colspan]))]:bg-gray-100",
+                      "[&_tbody_tr:nth-of-type(odd)]:bg-white",
+                      "[&_tbody_tr:nth-of-type(even)]:bg-gray-100",
                       "[&_td]:px-3 [&_td]:py-2 [&_td]:border-0",
                       "[&_tbody_tr]:border-b [&_tbody_tr]:border-gray-200",
                       "[&_tbody_tr:last-child]:border-b-0",
