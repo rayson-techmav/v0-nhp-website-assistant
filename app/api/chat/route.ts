@@ -217,11 +217,8 @@ export async function POST(req: Request) {
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n')
 
-    // Build customer account info
-    const firstName = process.env.CUSTOMER_FIRST_NAME || ''
-    const lastName = process.env.CUSTOMER_LAST_NAME || ''
-    const email = process.env.CUSTOMER_EMAIL || ''
-    const customerAccount = `${firstName} ${lastName} (${email})`.trim()
+    // Get customer account from environment variable
+    const customerAccount = process.env.CUSTOMER_ACCOUNT || ''
 
     console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage, History: historyText, CustomerAccount: customerAccount })
 
