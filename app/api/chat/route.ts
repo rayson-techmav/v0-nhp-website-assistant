@@ -217,9 +217,12 @@ export async function POST(req: Request) {
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join('\n')
 
-    console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage, History: historyText })
+    // Get customer account from environment variable
+    const customerAccount = process.env.CUSTOMER_ACCOUNT || ''
 
-    // Call the Power Automate API with Prompt and History payload
+    console.log('[v0] Sending to Power Automate:', { Prompt: latestMessage, History: historyText, CustomerAccount: customerAccount })
+
+    // Call the Power Automate API with Prompt, History, and CustomerAccount payload
     const response = await fetch(POWER_AUTOMATE_API, {
       method: 'POST',
       headers: {
@@ -228,6 +231,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         Prompt: latestMessage,
         History: historyText,
+        CustomerAccount: customerAccount,
       }),
     })
 
