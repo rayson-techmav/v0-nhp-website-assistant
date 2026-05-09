@@ -37,36 +37,36 @@ export function Chat() {
     if (isEscalated && !pollingIntervalRef.current) {
       // Set initial timestamp to now so we only get new messages
       lastTimestampRef.current = Date.now()
-      
+
       const pollForMessages = async () => {
         try {
           const response = await fetch(
             `/api/genesys-webhook?sessionId=default&since=${lastTimestampRef.current}`
           )
           const data = await response.json()
-          
+
           if (data.messages && data.messages.length > 0) {
             // Filter out messages we've already received (by ID)
             const newMessages = data.messages.filter(
               (msg: { id: string }) => !receivedMessageIdsRef.current.has(msg.id)
             )
-            
+
             if (newMessages.length > 0) {
               // Add new message IDs to our set
               newMessages.forEach((msg: { id: string }) => {
                 receivedMessageIdsRef.current.add(msg.id)
               })
-              
+
               // Check for [END] message and filter it out
               const endMessage = newMessages.find(
                 (msg: { content: string }) => msg.content.includes('[END]')
               )
-              
+
               if (endMessage) {
                 console.log('[v0] Detected [END] from Genesys polling, de-escalating')
                 setIsEscalated(false)
                 receivedMessageIdsRef.current.clear()
-                
+
                 // Add a de-escalation message without [END]
                 const deEscalationMessage: Message = {
                   id: Date.now().toString(),
@@ -76,7 +76,7 @@ export function Chat() {
                 setMessages((prev) => [...prev, deEscalationMessage])
                 return
               }
-              
+
               // Add messages to chat (filter out any [END] content just in case)
               const agentMessages: Message[] = newMessages
                 .filter((msg: { content: string }) => !msg.content.includes('[END]'))
@@ -85,12 +85,12 @@ export function Chat() {
                   role: 'assistant' as const,
                   content: msg.content,
                 }))
-              
+
               if (agentMessages.length > 0) {
                 setMessages((prev) => [...prev, ...agentMessages])
               }
             }
-            
+
             // Update timestamp for next poll
             lastTimestampRef.current = data.lastTimestamp
           }
@@ -240,7 +240,7 @@ export function Chat() {
                 'Product price',
                 'Help me track my order',
                 'Refund Order',
-                'Speak with a Live Person',
+                'Chat with a Live Person',
               ].map((suggestion) => (
                 <button
                   key={suggestion}
@@ -287,11 +287,11 @@ export function Chat() {
                       : 'bg-card border border-border rounded-bl-md'
                   )}
                 >
-                  <div 
+                  <div
                     className={cn(
                       "text-sm leading-relaxed max-w-none [&_p]:my-1 [&_table]:my-2 [&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-2 [&_th]:text-left [&_table]:border-collapse [&_table]:w-full [&_th]:border-b-2 [&_th]:border-border [&_td]:border-0 [&_a]:underline",
-                      message.role === 'user' 
-                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_th]:text-white [&_td]:text-white' 
+                      message.role === 'user'
+                        ? 'text-white [&_p]:text-white [&_strong]:text-white [&_a]:text-white [&_th]:text-white [&_td]:text-white'
                         : 'text-card-foreground [&_th]:text-card-foreground [&_td]:text-card-foreground'
                     )}
                   >
