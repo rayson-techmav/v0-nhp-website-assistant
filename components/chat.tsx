@@ -18,6 +18,7 @@ export function Chat() {
   const [messages, setMessages] = useState<Message[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isEscalated, setIsEscalated] = useState(false)
+  const [firstName, setFirstName] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const lastTimestampRef = useRef<number>(Date.now())
@@ -31,6 +32,22 @@ export function Chat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Load customer first name from environment
+  useEffect(() => {
+    const getFirstName = async () => {
+      try {
+        const response = await fetch('/api/customer-info')
+        const data = await response.json()
+        if (data.firstName) {
+          setFirstName(data.firstName)
+        }
+      } catch (error) {
+        console.error('[v0] Error fetching customer info:', error)
+      }
+    }
+    getFirstName()
+  }, [])
 
   // Poll for messages from Genesys when escalated
   useEffect(() => {
@@ -227,7 +244,7 @@ export function Chat() {
               </span>
             </div>
             <h2 className="text-xl font-semibold text-foreground mb-2">
-              Welcome to NHP Assistant
+              {firstName ? `Hi ${firstName},\nWelcome to NHP Assistant` : 'Welcome to NHP Assistant'}
             </h2>
             <p className="text-muted-foreground max-w-md">
               I&apos;m here to help you with questions about electrical and
