@@ -168,7 +168,7 @@ export function Chat() {
   return (
     <div className="flex flex-col h-full">
       {/* Chat Header */}
-      <div className="bg-primary px-6 py-4 flex items-center gap-4">
+      <div className="bg-primary px-6 py-4 flex items-center gap-4 relative">
         <div className="w-12 h-12 bg-card rounded-lg flex items-center justify-center shadow-md">
           <span className="text-primary font-bold text-sm">NHP</span>
         </div>
@@ -180,6 +180,14 @@ export function Chat() {
             Electrical &amp; Automation Specialists
           </p>
         </div>
+        {isEscalated && (
+          <div className="absolute top-3 right-6 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-primary-foreground/90 text-xs font-medium animate-pulse">
+              Chatting with Live Agent
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Messages Area */}
