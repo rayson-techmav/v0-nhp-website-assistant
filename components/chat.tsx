@@ -57,16 +57,38 @@ export function Chat() {
                 receivedMessageIdsRef.current.add(msg.id)
               })
               
-              // Add messages to chat
-              const agentMessages: Message[] = newMessages.map(
-                (msg: { id: string; content: string }) => ({
+              // Check for [END] message and filter it out
+              const endMessage = newMessages.find(
+                (msg: { content: string }) => msg.content.includes('[END]')
+              )
+              
+              if (endMessage) {
+                console.log('[v0] Detected [END] from Genesys polling, de-escalating')
+                setIsEscalated(false)
+                receivedMessageIdsRef.current.clear()
+                
+                // Add a de-escalation message without [END]
+                const deEscalationMessage: Message = {
+                  id: Date.now().toString(),
+                  role: 'assistant',
+                  content: 'The live agent has ended the chat. You are now chatting with NHP Assistant.',
+                }
+                setMessages((prev) => [...prev, deEscalationMessage])
+                return
+              }
+              
+              // Add messages to chat (filter out any [END] content just in case)
+              const agentMessages: Message[] = newMessages
+                .filter((msg: { content: string }) => !msg.content.includes('[END]'))
+                .map((msg: { id: string; content: string }) => ({
                   id: msg.id,
                   role: 'assistant' as const,
                   content: msg.content,
-                })
-              )
+                }))
               
-              setMessages((prev) => [...prev, ...agentMessages])
+              if (agentMessages.length > 0) {
+                setMessages((prev) => [...prev, ...agentMessages])
+              }
             }
             
             // Update timestamp for next poll
@@ -128,9 +150,14 @@ export function Chat() {
       const data = await response.json().catch(() => ({}))
       console.log('[v0] Chat API response data:', data)
 
-      // If escalated flag is returned, set the escalated state
-      if (data.escalated) {
-        setIsEscalated(true)
+      // Update escalated state based on API response
+      if (data.escalated !== undefined) {
+        setIsEscalated(data.escalated)
+        if (!data.escalated) {
+          console.log('[v0] De-escalated, switching back to Power Automate')
+          // Clear the received message IDs for a fresh start
+          receivedMessageIdsRef.current.clear()
+        }
       }
 
       // Don't show the response if hideResponse flag is set (for escalated messages to live agent)

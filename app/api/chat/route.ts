@@ -98,7 +98,7 @@ function extractTextFromParts(
     .join('')
 }
 
-async function sendToGenesys(prompt: string): Promise<{ success: boolean; response: string }> {
+async function sendToGenesys(prompt: string): Promise<{ success: boolean; response: string; ended: boolean }> {
   try {
     const firstName = process.env.CUSTOMER_FIRST_NAME || ''
     const lastName = process.env.CUSTOMER_LAST_NAME || ''
@@ -130,12 +130,25 @@ async function sendToGenesys(prompt: string): Promise<{ success: boolean; respon
       } catch {
         genesysResponse = rawText
       }
-      return { success: true, response: genesysResponse || 'Message sent to live agent.' }
+      
+      // Check if the response contains [END] - indicating agent ended the chat
+      if (genesysResponse.includes('[END]')) {
+        console.log('[v0] Detected [END] from Genesys, switching back to Power Automate')
+        // Remove [END] from response and return ended flag
+        const cleanedResponse = genesysResponse.replace('[END]', '').trim()
+        return { 
+          success: true, 
+          response: cleanedResponse || 'The live agent has ended the chat. You are now chatting with NHP Assistant.', 
+          ended: true 
+        }
+      }
+      
+      return { success: true, response: genesysResponse || 'Message sent to live agent.', ended: false }
     }
-    return { success: false, response: 'Failed to send message to live agent.' }
+    return { success: false, response: 'Failed to send message to live agent.', ended: false }
   } catch (error) {
     console.error('[v0] Genesys Cloud API error:', error)
-    return { success: false, response: 'Failed to connect to live agent.' }
+    return { success: false, response: 'Failed to connect to live agent.', ended: false }
   }
 }
 
@@ -157,6 +170,17 @@ export async function POST(req: Request) {
     if (isEscalated) {
       console.log('[v0] Session is escalated, routing to Genesys Cloud API')
       const result = await sendToGenesys(latestMessage)
+      
+      // If Genesys returned [END], switch back to Power Automate
+      if (result.ended) {
+        console.log('[v0] Agent ended chat, switching back to Power Automate')
+        return Response.json({
+          response: result.response,
+          escalated: false,
+          hideResponse: false
+        })
+      }
+      
       return Response.json({
         response: result.response,
         escalated: true,
