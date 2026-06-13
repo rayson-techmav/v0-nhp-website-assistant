@@ -11,6 +11,7 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  isLiveAgent?: boolean
 }
 
 export function Chat() {
@@ -101,6 +102,7 @@ export function Chat() {
                   id: msg.id,
                   role: 'assistant' as const,
                   content: msg.content,
+                  isLiveAgent: true,
                 }))
 
               if (agentMessages.length > 0) {
@@ -284,14 +286,22 @@ export function Chat() {
               >
                 <div
                   className={cn(
-                    'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                    'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden',
                     message.role === 'user'
                       ? 'bg-secondary text-secondary-foreground'
-                      : 'bg-primary text-primary-foreground'
+                      : message.isLiveAgent
+                        ? 'bg-card'
+                        : 'bg-primary text-primary-foreground'
                   )}
                 >
                   {message.role === 'user' ? (
                     <User className="w-4 h-4" />
+                  ) : message.isLiveAgent ? (
+                    <img
+                      src="/live-agent-avatar.png"
+                      alt="Live agent"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <Bot className="w-4 h-4" />
                   )}
